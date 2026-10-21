@@ -1,0 +1,40 @@
+services:
+  screenshot-editor:
+    build: .
+    image: screenshot-editor:1.0
+    container_name: screenshot-editor
+    restart: unless-stopped
+
+    # Nur lokal gebunden – der Reverse-Proxy (HTTPS) leitet auf diesen Port weiter.
+    # Läuft der Proxy auf einem anderen Host, "127.0.0.1:" entfernen.
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    # Härtung: schreibgeschütztes Dateisystem, keine Capabilities.
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
+
+    # --- Beispiel für Traefik (statt "ports") ---
+    # networks:
+    #   - proxy
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.screenshot.rule=Host(`screenshot.example.de`)
+    #   - traefik.http.routers.screenshot.entrypoints=websecure
+    #   - traefik.http.routers.screenshot.tls.certresolver=letsencrypt
+    #   - traefik.http.services.screenshot.loadbalancer.server.port=8080
+
+# networks:
+#   proxy:
+#     external: true

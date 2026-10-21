@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Screenshot-Editor</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6v4H7z"/></svg>
+      <span>Screenshot-Editor</span>
+    </div>
+
+    <div class="group">
+      <button id="btn-open" class="icon-btn" title="Bild öffnen (Strg+O)" aria-label="Bild öffnen">
+        <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      </button>
+      <button id="btn-clear" class="icon-btn" title="Bild verwerfen" aria-label="Bild verwerfen">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+      </button>
+      <input type="file" id="file-input" accept="image/*" hidden>
+    </div>
+
+    <div class="group">
+      <button id="btn-undo" class="icon-btn" title="Rückgängig (Strg+Z)" aria-label="Rückgängig">
+        <svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      </button>
+      <button id="btn-redo" class="icon-btn" title="Wiederholen (Strg+Y)" aria-label="Wiederholen">
+        <svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
+      </button>
+    </div>
+
+    <div class="group zoom">
+      <button id="btn-zoom-out" class="icon-btn" title="Verkleinern (Strg+−)" aria-label="Verkleinern">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+      </button>
+      <button id="btn-zoom-fit" class="zoom-label" title="An Fenster anpassen (Strg+0)">100 %</button>
+      <button id="btn-zoom-in" class="icon-btn" title="Vergrößern (Strg++)" aria-label="Vergrößern">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
+      </button>
+      <button id="btn-zoom-100" class="text-btn" title="Originalgröße">1:1</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button id="btn-info" class="text-btn" title="Hilfe &amp; Datenschutz">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
+      <span>Hilfe &amp; Datenschutz</span>
+    </button>
+    <button id="btn-download" class="btn" title="Als PNG speichern (Strg+S)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+      <span>PNG speichern</span>
+    </button>
+    <button id="btn-copy" class="btn primary" title="In Zwischenablage kopieren (Strg+C)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+      <span>Kopieren</span>
+    </button>
+  </header>
+
+  <div id="insecure-warning" class="warning" hidden>
+    Diese Seite wird nicht über HTTPS geladen. Der Browser erlaubt das Kopieren in die Zwischenablage deshalb nicht.
+    Bitte über HTTPS aufrufen (Reverse-Proxy) oder „PNG speichern“ verwenden.
+  </div>
+
+  <div class="main">
+    <nav class="toolbar" aria-label="Werkzeuge">
+      <button class="tool" data-tool="select" title="Auswählen / Verschieben (V)" aria-label="Auswählen">
+        <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6.5 1.5L9.5 19z"/></svg>
+      </button>
+      <span class="sep"></span>
+      <button class="tool" data-tool="rect" title="Rahmen (R)" aria-label="Rahmen">
+        <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>
+      </button>
+      <button class="tool" data-tool="ellipse" title="Ellipse (E)" aria-label="Ellipse">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.5" ry="6"/></svg>
+      </button>
+      <button class="tool" data-tool="line" title="Linie (L)" aria-label="Linie">
+        <svg viewBox="0 0 24 24"><path d="M5 19L19 5"/></svg>
+      </button>
+      <button class="tool" data-tool="arrow" title="Pfeil (A)" aria-label="Pfeil">
+        <svg viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></svg>
+      </button>
+      <button class="tool" data-tool="freehand" title="Freihand (F)" aria-label="Freihand">
+        <svg viewBox="0 0 24 24"><path d="M3 17c3-7 5-7 7-2.5s4 4 6.5-2.5S20 8 21 9"/></svg>
+      </button>
+      <button class="tool" data-tool="text" title="Text (T)" aria-label="Text">
+        <svg viewBox="0 0 24 24"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg>
+      </button>
+      <button class="tool" data-tool="counter" title="Nummerierung (N)" aria-label="Nummerierung">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10.5 9.5l2-1.5v8"/></svg>
+      </button>
+      <button class="tool" data-tool="highlight" title="Textmarker (H)" aria-label="Textmarker">
+        <svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M14.5 3.5l5 5L10 18H5v-5z"/></svg>
+      </button>
+      <span class="sep"></span>
+      <button class="tool" data-tool="pixelate" title="Verpixeln (P)" aria-label="Verpixeln">
+        <svg viewBox="0 0 24 24"><path d="M4 4h5v5H4zM15 4h5v5h-5zM9.5 9.5h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z"/></svg>
+      </button>
+      <button class="tool" data-tool="blur" title="Weichzeichnen (B)" aria-label="Weichzeichnen">
+        <svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+      </button>
+      <button class="tool" data-tool="redact" title="Schwärzen (S)" aria-label="Schwärzen">
+        <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1" class="filled"/></svg>
+      </button>
+      <span class="sep"></span>
+      <button class="tool" data-tool="crop" title="Zuschneiden (C)" aria-label="Zuschneiden">
+        <svg viewBox="0 0 24 24"><path d="M6 2v16h16M2 6h16v16"/></svg>
+      </button>
+    </nav>
+
+    <section class="workspace">
+      <div class="props" id="props">
+        <span class="props-title" id="props-title">Rahmen</span>
+
+        <div class="prop" data-prop="color">
+          <label><span id="l-color">Farbe</span> <input type="color" id="p-color"></label>
+          <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="prop" data-prop="width">
+          <label>Linienstärke <input type="range" id="p-width" min="1" max="20"> <output id="o-width"></output></label>
+        </div>
+        <div class="prop" data-prop="fontSize">
+          <label>Schriftgröße <input type="range" id="p-fontSize" min="10" max="120"> <output id="o-fontSize"></output></label>
+        </div>
+        <div class="prop" data-prop="size">
+          <label>Größe <input type="range" id="p-size" min="16" max="96"> <output id="o-size"></output></label>
+        </div>
+        <div class="prop" data-prop="strength">
+          <label><span id="l-strength">Stärke</span> <input type="range" id="p-strength" min="3" max="50"> <output id="o-strength"></output></label>
+        </div>
+        <div class="prop" data-prop="fill">
+          <label><input type="checkbox" id="p-fill"> Füllung</label>
+          <input type="color" id="p-fillColor" title="Füllfarbe">
+        </div>
+        <div class="prop" data-prop="shadow">
+          <label><input type="checkbox" id="p-shadow"> Schatten</label>
+        </div>
+
+        <span class="props-hint" id="props-hint"></span>
+        <div class="spacer"></div>
+
+        <div class="prop-actions" id="shape-actions" hidden>
+          <button id="btn-back" class="text-btn" title="Ganz nach hinten">Nach hinten</button>
+          <button id="btn-front" class="text-btn" title="Ganz nach vorne">Nach vorne</button>
+          <button id="btn-delete" class="text-btn danger" title="Löschen (Entf)">Löschen</button>
+        </div>
+        <div class="prop-actions" id="crop-actions" hidden>
+          <button id="btn-crop-cancel" class="text-btn">Abbrechen</button>
+          <button id="btn-crop-apply" class="btn primary">Zuschneiden</button>
+        </div>
+      </div>
+
+      <div class="viewport" id="viewport">
+        <div class="empty" id="empty">
+          <div class="empty-card">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            <h1>Screenshot einfügen</h1>
+            <p>Drücke <kbd>Strg</kbd> + <kbd>V</kbd>, ziehe ein Bild hierher oder wähle eine Datei.</p>
+            <div class="empty-actions">
+              <button id="btn-paste-empty" class="btn primary">Aus Zwischenablage einfügen</button>
+              <button id="btn-open-empty" class="btn">Datei auswählen</button>
+            </div>
+            <p class="privacy-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              Dein Bild wird nur in diesem Browser verarbeitet und nie an einen Server übertragen.
+            </p>
+          </div>
+        </div>
+        <div class="stage" id="stage" hidden>
+          <canvas id="canvas"></canvas>
+          <textarea id="text-editor" hidden spellcheck="false" autocomplete="off" aria-label="Text bearbeiten"></textarea>
+        </div>
+      </div>
+
+      <footer class="statusbar">
+        <span id="status-size">Kein Bild</span>
+        <span class="lock">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Lokal verarbeitet · keine Übertragung · keine Speicherung
+        </span>
+      </footer>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="dlg-info">
+    <div class="dlg-head">
+      <h2>Hilfe &amp; Datenschutz</h2>
+      <button id="btn-info-close" class="icon-btn" aria-label="Schließen">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <h3>Datenschutz</h3>
+      <ul>
+        <li>Screenshots werden <strong>ausschließlich lokal in deinem Browser</strong> verarbeitet. Es findet kein Upload statt.</li>
+        <li>Der Server liefert nur die Programmdateien aus. Er speichert keine Bilder und protokolliert keine Zugriffe.</li>
+        <li>Es werden keine Cookies, kein Local Storage und keine externen Dienste (CDNs, Schriftarten, Tracking) verwendet.</li>
+        <li>Eine Content-Security-Policy verbietet der Seite technisch jede Netzwerkverbindung (<code>connect-src 'none'</code>).</li>
+        <li>Mit dem Schließen des Tabs oder „Bild verwerfen“ ist das Bild aus dem Arbeitsspeicher entfernt.</li>
+      </ul>
+      <p class="tip"><strong>Tipp:</strong> Für Passwörter, Tokens oder personenbezogene Daten ist <em>Schwärzen</em> am sichersten.
+        Verpixelter oder weichgezeichneter Text lässt sich unter Umständen rekonstruieren.</p>
+
+      <h3>Tastenkürzel</h3>
+      <div class="shortcuts">
+        <div><kbd>Strg</kbd>+<kbd>V</kbd><span>Screenshot einfügen</span></div>
+        <div><kbd>Strg</kbd>+<kbd>C</kbd><span>Ergebnis kopieren</span></div>
+        <div><kbd>Strg</kbd>+<kbd>S</kbd><span>Als PNG speichern</span></div>
+        <div><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd><span>Rückgängig / Wiederholen</span></div>
+        <div><kbd>Strg</kbd>+<kbd>0</kbd><span>An Fenster anpassen</span></div>
+        <div><kbd>Strg</kbd>+Mausrad<span>Zoomen</span></div>
+        <div><kbd>Entf</kbd><span>Auswahl löschen</span></div>
+        <div><kbd>Pfeiltasten</kbd><span>Auswahl verschieben (Umschalt = 10 px)</span></div>
+        <div><kbd>Umschalt</kbd><span>Quadrat / 45°-Winkel beim Zeichnen</span></div>
+        <div><kbd>V</kbd><span>Auswählen</span></div>
+        <div><kbd>R</kbd><span>Rahmen</span></div>
+        <div><kbd>E</kbd><span>Ellipse</span></div>
+        <div><kbd>L</kbd> / <kbd>A</kbd><span>Linie / Pfeil</span></div>
+        <div><kbd>F</kbd><span>Freihand</span></div>
+        <div><kbd>T</kbd><span>Text</span></div>
+        <div><kbd>N</kbd><span>Nummerierung</span></div>
+        <div><kbd>H</kbd><span>Textmarker</span></div>
+        <div><kbd>P</kbd> / <kbd>B</kbd> / <kbd>S</kbd><span>Verpixeln / Weichzeichnen / Schwärzen</span></div>
+        <div><kbd>C</kbd><span>Zuschneiden (Enter = anwenden)</span></div>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
